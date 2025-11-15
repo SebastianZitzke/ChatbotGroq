@@ -2,6 +2,7 @@ package com.example.BotTravelUnsta;
 
 
 
+
 // --- Imports de Spring Boot ---
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
@@ -10,7 +11,7 @@ import org.springframework.stereotype.Component;
 
 // --- Imports de TelegramBots ---
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
-import org.telegram.telegrambots.meta.api.methods.ActionType; // ✅ CORRECCIÓN: Import AÑADIDO
+import org.telegram.telegrambots.meta.api.methods.ActionType;
 import org.telegram.telegrambots.meta.api.methods.send.SendChatAction;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -25,14 +26,13 @@ import okhttp3.*;
 // --- Imports estándar de Java ---
 import java.io.IOException;
 
-/**
- * Clase ÚNICA que actúa como:
- * 1. @SpringBootApplication: El punto de entrada de Spring.
- * 2. @Component: Un Bean de Spring.
- * 3. TelegramLongPollingBot: La lógica del bot.
- */
+// --- ✅ IMPORTS AÑADIDOS PARA EL REGISTRO ---
+import org.telegram.telegrambots.meta.TelegramBotsApi;
+import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
+import jakarta.annotation.PostConstruct; // Importante para el ciclo de vida de Spring
+
 @SpringBootApplication
-@Component // Le dice a Spring que esta es una clase que debe gestionar
+@Component
 public class GuiaTuristicoBot extends TelegramLongPollingBot {
 
 	// --- Campos Inyectados ---
@@ -49,12 +49,11 @@ public class GuiaTuristicoBot extends TelegramLongPollingBot {
 	 */
 	public static void main(String[] args) {
 		SpringApplication.run(GuiaTuristicoBot.class, args);
-		System.out.println("✅ Bot Guía Turístico iniciado!");
+		// El System.out.println de aquí se movió al método de registro
 	}
 
 	/**
 	 * Constructor usado por Spring para inyectar los valores
-	 * desde application.properties (que a su vez los toma de las variables de entorno).
 	 */
 	public GuiaTuristicoBot(
 			@Value("${telegram.bot.token}") String botToken,
@@ -65,6 +64,27 @@ public class GuiaTuristicoBot extends TelegramLongPollingBot {
 		this.botUsername = botUsername;
 		this.groqApiKey = groqApiKey;
 	}
+
+	// --- ✅ MÉTODO NUEVO PARA MANTENER VIVA LA APP ---
+	/**
+	 * Este método se ejecuta DESPUÉS de que Spring crea el bot.
+	 * Registra manualmente el bot con la API de Telegram.
+	 * Esto inicia los hilos de sondeo (polling) y mantiene la aplicación viva.
+	 */
+	@PostConstruct
+	public void registrarBot() {
+		try {
+			TelegramBotsApi botsApi = new TelegramBotsApi(DefaultBotSession.class);
+			botsApi.registerBot(this); // 'this' es la instancia actual de GuiaTuristicoBot
+			System.out.println("✅ Bot registrado y escuchando exitosamente!");
+		} catch (TelegramApiException e) {
+			System.err.println("❌ Error al registrar el bot: " + e.getMessage());
+			e.printStackTrace();
+			// Si el registro falla (ej. mal token), la app podría detenerse
+		}
+	}
+	// --- FIN DEL MÉTODO NUEVO ---
+
 
 	@Override
 	public String getBotUsername() {
@@ -94,7 +114,7 @@ public class GuiaTuristicoBot extends TelegramLongPollingBot {
 		}
 
 		// Mostrar "Escribiendo..."
-		enviarAccion(chatId, ActionType.TYPING); // ✅ CORRECCIÓN: Llamada usando el enum
+		enviarAccion(chatId, ActionType.TYPING);
 
 		// Procesar en hilo separado para no bloquear
 		new Thread(() -> {
@@ -120,17 +140,14 @@ public class GuiaTuristicoBot extends TelegramLongPollingBot {
 				"Usa emojis para hacer la conversación más amigable (ej: 🗺️, ✈️, 🍽️, 🏛️).";
 
 		JsonObject requestBody = new JsonObject();
-		requestBody.addProperty("model", "llama-3.3-70b-versatile"); // O el modelo que prefieras
+		requestBody.addProperty("model", "llama-3.3-70b-versatile");
 
 		JsonArray messages = new JsonArray();
-
-		// Mensaje de Sistema (Personalidad)
 		JsonObject systemMessage = new JsonObject();
 		systemMessage.addProperty("role", "system");
 		systemMessage.addProperty("content", systemPrompt);
 		messages.add(systemMessage);
 
-		// Mensaje del Usuario (Pregunta)
 		JsonObject userMessage = new JsonObject();
 		userMessage.addProperty("role", "user");
 		userMessage.addProperty("content", preguntaUsuario);
@@ -140,7 +157,6 @@ public class GuiaTuristicoBot extends TelegramLongPollingBot {
 		requestBody.addProperty("temperature", 0.7);
 		requestBody.addProperty("max_tokens", 1024);
 
-		// Construir la petición HTTP
 		Request request = new Request.Builder()
 				.url(GROQ_API_URL)
 				.addHeader("Authorization", "Bearer " + groqApiKey)
@@ -148,7 +164,6 @@ public class GuiaTuristicoBot extends TelegramLongPollingBot {
 				.post(RequestBody.create(requestBody.toString(), MediaType.parse("application/json")))
 				.build();
 
-		// Ejecutar la petición y parsear la respuesta
 		try (Response response = httpClient.newCall(request).execute()) {
 			if (response.isSuccessful() && response.body() != null) {
 				JsonObject json = gson.fromJson(response.body().string(), JsonObject.class);
@@ -176,13 +191,10 @@ public class GuiaTuristicoBot extends TelegramLongPollingBot {
 		}
 	}
 
-	/**
-	 * Envía una acción de chat (como "typing...").
-	 */
-	private void enviarAccion(long chatId, ActionType accion) { // ✅ CORRECCIÓN: El parámetro es ActionType
+	private void enviarAccion(long chatId, ActionType accion) {
 		SendChatAction chatAction = new SendChatAction();
 		chatAction.setChatId(String.valueOf(chatId));
-		chatAction.setAction(accion); // La librería maneja el enum
+		chatAction.setAction(accion);
 		try {
 			execute(chatAction);
 		} catch (TelegramApiException e) {
