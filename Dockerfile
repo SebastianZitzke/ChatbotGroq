@@ -16,7 +16,8 @@ COPY src ./src
 
 # 3. Compila la aplicación y la empaqueta en un .jar
 # Omitimos los tests para un build más rápido
-RUN mvn package -DskipTests
+# -Dmaven.test.skip=true omite tanto la compilación como la ejecución de tests
+RUN mvn package -Dmaven.test.skip=true
 
 # --- ETAPA 2: EJECUCIÓN (Runner) ---
 # Usamos una imagen JRE (Java Runtime) mínima basada en Alpine.
