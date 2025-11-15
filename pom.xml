@@ -6,6 +6,7 @@
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
 		<version>3.2.5</version> <relativePath/> </parent>
+
 	<groupId>com.example</groupId>
 	<artifactId>telegram-guia</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
@@ -22,9 +23,15 @@
 		</dependency>
 
 		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-web</artifactId>
+		</dependency>
+
+		<dependency>
 			<groupId>org.telegram</groupId>
 			<artifactId>telegrambots-spring-boot-starter</artifactId>
-			<version>6.9.7.1</version> </dependency>
+			<version>6.9.7.1</version>
+		</dependency>
 
 		<dependency>
 			<groupId>com.squareup.okhttp3</groupId>
@@ -35,6 +42,12 @@
 			<groupId>com.google.code.gson</groupId>
 			<artifactId>gson</artifactId>
 			<version>2.10.1</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
 		</dependency>
 
 	</dependencies>
