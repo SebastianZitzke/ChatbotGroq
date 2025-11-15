@@ -2,6 +2,7 @@ package com.example.BotTravelUnsta;
 
 
 
+// ❗️ Asegúrate que este sea tu nombre de paquete
 
 // --- Imports de Spring Boot ---
 import org.springframework.beans.factory.annotation.Value;
